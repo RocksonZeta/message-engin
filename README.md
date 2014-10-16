@@ -124,7 +124,7 @@ client.connect('ws://localhost:8080' , null , null , {dn:"dn1",appId:"appid1"});
 ##API
 ###server api
 var server  = require('message-engin').server;
-- **start(mqConf , wsConf)** - we must `yield server.start(mqConf , wsConf)` to start server.`mqConf` ref:[node-amqp](https://github.com/postwait/node-amqp). `wsConf` ref:[WebSocket-Node](https://github.com/Worlize/WebSocket-Node)
+- **start(mqConf , wsConf)** - we must `yield server.start(mqConf , wsConf)` to start server.`mqConf` ref:[node-amqp](https://github.com/postwait/node-amqp). `wsConf` ref:[WebSocket-Node](https://github.com/Worlize/WebSocket-Node). `wsConf` has two extra items:`function* keyFn(request)` and `function messageKeyFn(message)`, `keyFn` give the connection key to identify a connection. `messageKeyFn` give the connection key from message to determine which connection we will send the message.
 
 ### client api
 var Client  = require('message-engin').Client; // Client is class
