@@ -12,13 +12,10 @@ co(function*(){
 	yield client.init();
 	client.on('message' , function(message){
 		console.log(message);
+		//echo client
 		client.send(message);
 	});
 	client.on('status' , function(message){
 		console.log('status change',message);
 	});
-	// setInterval(function(){
-
-	// 	client.send({id:1,name:"jim"});
-	// },3000)
 })();

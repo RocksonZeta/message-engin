@@ -8,32 +8,41 @@ function genKey(obj){
 	return obj.dn+":"+obj.appid;
 }
 
-function* keyFn(request ){
+/**
+give the key to the connection
+*/
+function* keyFn(request){
+	//request.cookies  // you can get cookie
 	var httpRequest = request.httpRequest;
 	console.log("key:",genKey(httpRequest.headers),httpRequest.headers);
 	return genKey(httpRequest.headers);
 }
 
-
+/*
+calc the connetion key from the message
+*/
 function messageKeyFn(message){
 	console.log('message key' , message);
 	return genKey(message);
 }
 
-
-co(function*(){
-
-	var mqConf = {host: '192.168.13.184'};
-
+function createHttpServer(){
 	var httpServer = http.createServer(function(request, response) {
 	    console.log((new Date()) + ' Received request for ' + request.url);
 	    response.writeHead(404);
 	    response.end();
 	});
 	httpServer.listen(8080, function() {
-	    console.log((new Date()) + ' Server is listening on port 8080');
+	    console.log('Server is listening on port 8080');
 	});
-	var wsConf ={httpServer:httpServer , keyFn:keyFn,messageKeyFn:messageKeyFn };
-	yield server.start(mqConf , wsConf);
+	return httpServer;
+}
 
+
+co(function*(){
+	//message queue config
+	var mqConf = {host: '192.168.13.184'};
+	//websocket config
+	var wsConf ={httpServer:createHttpServer() , keyFn:keyFn,messageKeyFn:messageKeyFn };
+	yield server.start(mqConf , wsConf);
 })();

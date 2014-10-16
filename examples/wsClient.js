@@ -1,14 +1,9 @@
 'use strict';
-
-
 var WebSocketClient = require('websocket').client;
-
 var client = new WebSocketClient();
-
 client.on('connectFailed', function(error) {
     console.log('Connect Error: ' + error.toString());
 });
-
 client.on('connect', function(connection) {
     console.log('WebSocket client connected');
     connection.on('error', function(error) {
@@ -23,15 +18,13 @@ client.on('connect', function(connection) {
             console.log("Received: " + msg.content,"+"+(Date.now()-msg.ct+'ms'));
         }
     });
-
     function sendMessage() {
         if (connection.connected) {
             var number = Math.round(Math.random() * 0xFFFFFF);
             connection.sendUTF(JSON.stringify({dn:'dn1' , appid:"appid1", ct:Date.now() ,content:number.toString()}));
-            setTimeout(sendMessage, 1);
+            setTimeout(sendMessage, 1000);
         }
     }
     sendMessage();
 });
-
-client.connect('ws://localhost:8080/message' , null , null , {dn:"dn1",appId:"appid1"});
+client.connect('ws://localhost:8080' , null , null , {dn:"dn1",appId:"appid1"});

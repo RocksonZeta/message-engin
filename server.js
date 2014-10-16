@@ -7,18 +7,6 @@ var
 co  = require('co'),
 amqpUtils = require('./amqpUtils');
 
-// require('co-punch')('amqp');
-
-
-
-
-// function exchangePublish(exchange ,routingKey, message, options){
-// 	return function(done){
-// 		exchange.publish(routingKey, message, options , function(b){
-// 			done(null , b);
-// 		});
-// 	};
-// }
 
 /**
 ref:https://github.com/postwait/node-amqp
