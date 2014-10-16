@@ -4,17 +4,20 @@ http = require('http');
 
 var server  = require('../').server;
 
-function* keyFn(request ,server){
-	console.log('key fn' , server.connectionCount);
-	var httpRequest = request.httpRequest;
+function genKey(obj){
+	return obj.dn+":"+obj.appid;
+}
 
-	return 1;
+function* keyFn(request ){
+	var httpRequest = request.httpRequest;
+	console.log("key:",genKey(httpRequest.headers),httpRequest.headers);
+	return genKey(httpRequest.headers);
 }
 
 
 function messageKeyFn(message){
-	console.log('message key' , message.id);
-	return message.id;
+	console.log('message key' , message);
+	return genKey(message);
 }
 
 

@@ -19,18 +19,19 @@ client.on('connect', function(connection) {
     });
     connection.on('message', function(message) {
         if (message.type === 'utf8') {
-            console.log("Received: '" + message.utf8Data + "'");
+            var msg = JSON.parse(message.utf8Data);
+            console.log("Received: " + msg.content,"+"+(Date.now()-msg.ct+'ms'));
         }
     });
 
-    function sendNumber() {
+    function sendMessage() {
         if (connection.connected) {
             var number = Math.round(Math.random() * 0xFFFFFF);
-            connection.sendUTF(JSON.stringify({id:1 ,random:number.toString()}));
-            setTimeout(sendNumber, 3000);
+            connection.sendUTF(JSON.stringify({dn:'dn1' , appid:"appid1", ct:Date.now() ,content:number.toString()}));
+            setTimeout(sendMessage, 1);
         }
     }
-    sendNumber();
+    sendMessage();
 });
 
-client.connect('ws://localhost:8080/message');
+client.connect('ws://localhost:8080/message' , null , null , {dn:"dn1",appId:"appid1"});

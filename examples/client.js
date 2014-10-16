@@ -3,7 +3,7 @@
 var 
 co = require('co');
 
-var Client  = require('../').Client.js;
+var Client  = require('../').Client;
 
 
 co(function*(){
@@ -12,12 +12,13 @@ co(function*(){
 	yield client.init();
 	client.on('message' , function(message){
 		console.log(message);
+		client.send(message);
 	});
 	client.on('status' , function(message){
 		console.log('status change',message);
 	});
-	setInterval(function(){
+	// setInterval(function(){
 
-		client.send({id:1,name:"jim"});
-	},3000)
+	// 	client.send({id:1,name:"jim"});
+	// },3000)
 })();

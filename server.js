@@ -5,9 +5,7 @@
 'use strict';
 var 
 co  = require('co'),
-amqpUtils = require('./amqpUtils'),
-debug = require('debug')('message-server:Server')
-;
+amqpUtils = require('./amqpUtils');
 
 // require('co-punch')('amqp');
 
@@ -31,7 +29,6 @@ ref:https://github.com/postwait/node-amqp
 @constructor
 */
 function MqManager(conf){
-	debug('new MqManager');
 	this.conf = conf;
 	this.messageCb = null;
 	this.conf.receiveExchange = this.conf.receiveExchange || 'receiveExchange';
@@ -42,7 +39,6 @@ function MqManager(conf){
 	this.conf.messageExchange = this.conf.messageExchange || 'messageExchange';
 }
 MqManager.prototype.init = function*(){
-	debug('init MqManager');
 	this.client = yield amqpUtils.createMqClient(this.conf);
 	this.receiveExchange = yield amqpUtils.createExchange(this.client , this.conf.receiveExchange, {type:'direct'});
 	this.statusExchange = yield amqpUtils.createExchange(this.client , this.conf.statusExchange ,{type:'direct'});
@@ -52,13 +48,11 @@ MqManager.prototype.init = function*(){
 	// this.messageQueue.bind(this.conf.messageExchange, this.conf.messageQueue);
 	var _this = this;
 	this.messageQueue.subscribe(function (message, headers, deliveryInfo) {
-		debug('Got a message with routing key ' + deliveryInfo.routingKey);
 		_this.fireMessage(message);
 	});
 };
 
 MqManager.prototype.fireMessage = function(message){
-	debug('MqManager fireMessage');
 	if(this.messageCb){
 		 this.messageCb(message);
 	}else{
@@ -72,14 +66,12 @@ MqManager.prototype.fireMessage = function(message){
 	put message to the send queue
 */
 MqManager.prototype.send = function(message){
-	debug('MqManager send message');
 	this.receiveExchange.publish(this.conf.receiveQueue, message ,{contentType:'application/json'});
 };
 /**
 	put connection status change message to the send status queue
 */
 MqManager.prototype.sendStatusMessage = function(message){
-	debug('MqManager send StatusMessage');
 	this.statusExchange.publish(this.conf.statusQueue, message ,{contentType:'application/json'});
 
 };
@@ -87,7 +79,6 @@ MqManager.prototype.sendStatusMessage = function(message){
 	receive a new message from message queue
 */
 MqManager.prototype.onMessage = function(cb){
-	debug('MqManager onMessage');
 	this.messageCb = cb;
 };
 
@@ -103,7 +94,6 @@ manager the connections
 @param {function} conf.messageKeyFn - function*(message) , give key from new message , the message is sended from client, 
 */
 function WsManager(conf){
-	debug('new WsManager');
 	if(!conf.keyFn){
 		throw new Error('WsManager conf must have a keyFn.');
 	}
@@ -122,7 +112,6 @@ function WsManager(conf){
 }
 
 WsManager.prototype._onRequest = function(request){
-	debug("a new connection request,origin:%s,protocol:%s" , request.origin, request.protocol);
 	co(function*(){
 		var key ;
 		try{
@@ -136,10 +125,7 @@ WsManager.prototype._onRequest = function(request){
 		if(this.connections[key]){
 			this.connections[key].close();
 		}
-		debug('connection key:%s' , key);
 		var connection = request.accept(this.conf.protocol,this.conf.origin||request.origin );
-		// var connection = request.accept();
-		debug("accept ws connection");
 		this.connections[key] = connection;
 		this.connectionCount +=1;
 		connection.__key__ = key;
@@ -148,7 +134,6 @@ WsManager.prototype._onRequest = function(request){
         }
 		var _this = this;
 		connection.on('message' , function(message){
-			debug('a new message received');
 			if (message.type === 'utf8') {
 				if(_this.onMessageCb){
 					_this.onMessageCb(message.utf8Data);
@@ -158,7 +143,6 @@ WsManager.prototype._onRequest = function(request){
 	        }
 		});
 		connection.on('close', function(reasonCode, description) {
-	        debug('connection '+this.__key__+' disconnected ,reasonCode:%s , description:%s', reasonCode , description);
 	        if(_this.onConnectionStatusChangeCb){
 	        	_this.onConnectionStatusChangeCb({status:0,key:connection.__key__ , reasonCode:reasonCode,description:description});
 	        }
@@ -171,7 +155,6 @@ WsManager.prototype._onRequest = function(request){
 };
 
 WsManager.prototype.send = function(message){
-	debug('WsManager send a message');
 	var key = this.conf.messageKeyFn(message);
 	var connection = this.connections[key];
 	if(connection){
@@ -191,16 +174,13 @@ WsManager.prototype.send = function(message){
 };
 
 WsManager.prototype.onSendFailed = function(cb){
-	debug('WsManager onSendFailed');
 	this.onSendFailedCb = cb;
 };
 WsManager.prototype.onMessage = function(cb){
-	debug('WsManager onMessage');
 	this.onMessageCb = cb;
 };
 
 WsManager.prototype.onConnectionStatusChange = function(cb){
-	debug('WsManager onConnectionStatusChange');
 	this.onConnectionStatusChangeCb = cb;
 };
 
