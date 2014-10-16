@@ -9,10 +9,11 @@ $ npm install message-engin --save
 ```
 
 ##Design
-
-client1						server1 <br/>
-client2 -> messageQueue -> 	server2 ->LVS ---> websocket client <br/>
-client3						server3 <br/>
+<pre>
+client1						server1 
+client2 -> messageQueue -> 	server2 ->LVS ---> websocket client
+client3						server3
+</pre>
 
 We can define our own message protocol.
 
