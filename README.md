@@ -133,7 +133,7 @@ Methods
  we must `yield server.start(mqConf , wsConf)` to start server.`mqConf` ref:[node-amqp](https://github.com/postwait/node-amqp). 
  ####wsConf propperties
  `wsConf` ref:[WebSocket-Node](https://github.com/Worlize/WebSocket-Node). `wsConf` has two extra items:
- - **function* keyFn(request)** -  `function `, `keyFn` give the connection key to identify a connection. `request.httpRequest` is the http request at websocket handshake.so we can use `request.httpRequest.headers` to get http headers.
+ - **function\* keyFn(request)** -  `function `, `keyFn` give the connection key to identify a connection. `request.httpRequest` is the http request at websocket handshake.so we can use `request.httpRequest.headers` to get http headers.
  - **messageKeyFn(message,headers)**  - give the connection key from message to determine which connection we will send the message. the `headers` is come from `client.send(message,headers)`.
 
 Client
