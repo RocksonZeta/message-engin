@@ -36,7 +36,7 @@ Client.prototype.init = function*(){
 	yield amqpUtils.queueBind(this.statusQueue ,this.statusExchange, this.conf.statusQueue);
 	var _this = this;
 	this.receiveQueue.subscribe(function (message, headers, deliveryInfo) {
-		_this.emit('message',message);
+		_this.emit('message',message,headers);
 	});
 	/**
 	message: {
@@ -45,23 +45,24 @@ Client.prototype.init = function*(){
 	}
 	*/
 	this.statusQueue.subscribe(function (message, headers, deliveryInfo) {
-		_this.emit('status',message);
+		_this.emit('status',message,headers);
 	});
 };
 
 /**
 send message
 @param {object} message  - 
-@params {optional} opt  - ref:https://github.com/postwait/node-amqp#exchangepublishroutingkey-message-options-callback
+@params {optional} opt  - eg.{headers:{appId:"1"}}ref:https://github.com/postwait/node-amqp#exchangepublishroutingkey-message-options-callback
+we can you use opt.headers to be routing key;
 */
 Client.prototype.send = function(message,opt){
-	this.messageExchange.publish(this.conf.receiveQueue, message ,opt);
+	this.messageExchange.publish(this.conf.receiveQueue, message ,{headers:opt});
 };
 
 Client.prototype.$send = function(message,opt){
 	opt = opt;
 	return function(done){
-		this.messageExchange.publish(this.conf.receiveQueue, message ,opt , function(b){
+		this.messageExchange.publish(this.conf.receiveQueue, message ,{headers:opt} , function(b){
 			done(null ,b);
 		});
 	};

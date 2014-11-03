@@ -7,6 +7,9 @@ var
 co  = require('co'),
 amqpUtils = require('./amqpUtils');
 
+function isGenerator(obj) {
+  return obj && 'function' == typeof obj.next && 'function' == typeof obj.throw;
+}
 
 /**
 ref:https://github.com/postwait/node-amqp
@@ -36,13 +39,13 @@ MqManager.prototype.init = function*(){
 	// this.messageQueue.bind(this.conf.messageExchange, this.conf.messageQueue);
 	var _this = this;
 	this.messageQueue.subscribe(function (message, headers, deliveryInfo) {
-		_this.fireMessage(message);
+		_this.fireMessage(message,headers);
 	});
 };
 
-MqManager.prototype.fireMessage = function(message){
+MqManager.prototype.fireMessage = function(message,headers){
 	if(this.messageCb){
-		 this.messageCb(message);
+		 this.messageCb(message,headers);
 	}else{
 		console.warn('no message callback ' , message);
 	}
@@ -53,14 +56,14 @@ MqManager.prototype.fireMessage = function(message){
 /**
 	put message to the send queue
 */
-MqManager.prototype.send = function(message){
-	this.receiveExchange.publish(this.conf.receiveQueue, message ,{contentType:'application/json'});
+MqManager.prototype.send = function(message, headers){
+	this.receiveExchange.publish(this.conf.receiveQueue, message ,{contentType:'application/json' , headers:headers||{}});
 };
 /**
 	put connection status change message to the send status queue
 */
-MqManager.prototype.sendStatusMessage = function(message){
-	this.statusExchange.publish(this.conf.statusQueue, message ,{contentType:'application/json'});
+MqManager.prototype.sendStatusMessage = function(message,headers){
+	this.statusExchange.publish(this.conf.statusQueue, message ,{contentType:'application/json',headers:headers||{}});
 
 };
 /**
@@ -114,25 +117,31 @@ WsManager.prototype._onRequest = function(request){
 			this.connections[key].close();
 		}
 		var connection = request.accept(this.conf.protocol,this.conf.origin||request.origin );
+		connection.request = request;
 		this.connections[key] = connection;
 		this.connectionCount +=1;
 		connection.__key__ = key;
 		if(this.onConnectionStatusChangeCb){
-        	this.onConnectionStatusChangeCb({status:1,key:key});
+        	this.onConnectionStatusChangeCb({status:1,key:key},request.httpRequest.headers);
         }
 		var _this = this;
 		connection.on('message' , function(message){
-			if (message.type === 'utf8') {
-				if(_this.onMessageCb){
-					_this.onMessageCb(message.utf8Data);
-				}else{
-					console.warn('new message not handled' , message);
-				}
-	        }
+			// _this.doBeforeAddToMq(message, this , function(e,message){
+				// if(e){
+				// 	return;
+				// }
+				if (message.type === 'utf8') {
+					if(_this.onMessageCb){
+						_this.onMessageCb(message.utf8Data,this.request.httpRequest.headers);
+					}else{
+						console.warn('new message not handled' , message);
+					}
+		        }
+			// });
 		});
 		connection.on('close', function(reasonCode, description) {
 	        if(_this.onConnectionStatusChangeCb){
-	        	_this.onConnectionStatusChangeCb({status:0,key:connection.__key__ , reasonCode:reasonCode,description:description});
+	        	_this.onConnectionStatusChangeCb({status:0,key:connection.__key__ , reasonCode:reasonCode,description:description},connection.request.httpRequest.headers);
 	        }
 	        if(1000 != reasonCode){
 	        	delete _this.connections[this.__key__];
@@ -142,8 +151,9 @@ WsManager.prototype._onRequest = function(request){
 	}).call(this);
 };
 
-WsManager.prototype.send = function(message){
-	var key = this.conf.messageKeyFn(message);
+
+WsManager.prototype.send = function(message,headers){
+	var key = this.conf.messageKeyFn(message,headers);
 	var connection = this.connections[key];
 	if(connection){
 		if('string' != typeof message){
@@ -155,7 +165,7 @@ WsManager.prototype.send = function(message){
 			console.error("send message failed" , message);
 			console.error(e);
 			if(this.onSendFailedCb){
-				this.onSendFailedCb(e,message);
+				this.onSendFailedCb(e,message,headers);
 			}
 		}
 	}
@@ -182,14 +192,14 @@ exports.start = function*(mqConf,wsConf){
 	yield mqManager.init();
 	var wsManager = new WsManager(wsConf);
 	//queue -> message -> ws
-	mqManager.onMessage(function(message){
-		wsManager.send(message);
+	mqManager.onMessage(function(message,headers){
+		wsManager.send(message,headers);
 	});
-	wsManager.onMessage(function(message){
-		mqManager.send(message);
+	wsManager.onMessage(function(message,headers){
+		mqManager.send(message,headers);
 	});
-	wsManager.onConnectionStatusChange(function(message){
-		mqManager.sendStatusMessage(message);
+	wsManager.onConnectionStatusChange(function(message,headers){
+		mqManager.sendStatusMessage(message,headers);
 	});
 	// return new Server(mqManager , wsManager, conf);
 };

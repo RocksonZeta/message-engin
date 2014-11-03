@@ -5,6 +5,7 @@ http = require('http');
 var server  = require('../').server;
 
 function genKey(obj){
+	console.log(obj);
 	return obj.dn+":"+obj.appid;
 }
 
@@ -21,9 +22,9 @@ function* keyFn(request){
 /*
 calc the connetion key from the message
 */
-function messageKeyFn(message){
-	console.log('message key' , message);
-	return genKey(message);
+function messageKeyFn(message , headers){
+	console.log('message key' , message,headers);
+	return genKey(headers);
 }
 
 function createHttpServer(){
@@ -37,12 +38,10 @@ function createHttpServer(){
 	});
 	return httpServer;
 }
-
-
 co(function*(){
 	//message queue config
 	var mqConf = {host: '192.168.13.184'};
 	//websocket config
-	var wsConf ={httpServer:createHttpServer() , keyFn:keyFn,messageKeyFn:messageKeyFn };
+	var wsConf ={httpServer:createHttpServer() , keyFn:keyFn,messageKeyFn:messageKeyFn,keepaliveInterval:60000 };
 	yield server.start(mqConf , wsConf);
 })();

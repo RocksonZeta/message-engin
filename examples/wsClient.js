@@ -21,10 +21,10 @@ client.on('connect', function(connection) {
     function sendMessage() {
         if (connection.connected) {
             var number = Math.round(Math.random() * 0xFFFFFF);
-            connection.sendUTF(JSON.stringify({dn:'dn1' , appid:"appid1", ct:Date.now() ,content:number.toString()}));
+            connection.sendUTF(JSON.stringify({ct:Date.now() ,content:number.toString()}));
             setTimeout(sendMessage, 1000);
         }
     }
     sendMessage();
 });
-client.connect('ws://localhost:8080' , null , null , {dn:"dn1",appId:"appid1"});
+client.connect('ws://localhost:8080' , null , null , {Dn:"dn1",appId:"appid1"});

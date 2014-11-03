@@ -44,11 +44,10 @@ function* keyFn(request){
 /*
 calc the connetion key from the message
 */
-function messageKeyFn(message){
-	console.log('message key' , message);
-	return genKey(message);
+function messageKeyFn(message , headers){
+	console.log('message key' , message,headers);
+	return genKey(headers);
 }
-
 function createHttpServer(){
 	var httpServer = http.createServer(function(request, response) {
 	    console.log((new Date()) + ' Received request for ' + request.url);
@@ -77,13 +76,13 @@ co(function*(){
 	var conf = {host: 'localhost'};
 	var client = new Client(conf);
 	yield client.init();
-	client.on('message' , function(message){
-		console.log(message);
+	client.on('message' , function(message,headers){
+		console.log(message,headers);
 		//echo client
-		client.send(message);
+		client.send(message,headers);
 	});
-	client.on('status' , function(message){
-		console.log('status change',message);
+	client.on('status' , function(message,headers){
+		console.log('status change',message,headers);
 	});
 })();
 
@@ -123,18 +122,42 @@ client.connect('ws://localhost:8080' , null , null , {dn:"dn1",appId:"appid1"});
 ```
 
 ##API
-###server api
+
+Server
+======
 var server  = require('message-engin').server;
-- **start(mqConf , wsConf)** - we must `yield server.start(mqConf , wsConf)` to start server.`mqConf` ref:[node-amqp](https://github.com/postwait/node-amqp). `wsConf` ref:[WebSocket-Node](https://github.com/Worlize/WebSocket-Node). `wsConf` has two extra items:`function* keyFn(request)` and `function messageKeyFn(message)`, `keyFn` give the connection key to identify a connection. `messageKeyFn` give the connection key from message to determine which connection we will send the message.
 
-### client api
-var Client  = require('message-engin').Client; // Client is class
-- **new Client(mqConf)** - create a message engin client. `mqConf` ref:[node-amqp](https://github.com/postwait/node-amqp)
-- **init()** - we must `yield client.init()` to init client;
+Methods
+-------
+### function* start(mqConf , wsConf)
+ we must `yield server.start(mqConf , wsConf)` to start server.`mqConf` ref:[node-amqp](https://github.com/postwait/node-amqp). 
+ ####wsConf propperties
+ `wsConf` ref:[WebSocket-Node](https://github.com/Worlize/WebSocket-Node). `wsConf` has two extra items:
+ - ** function* keyFn(request)** -  `function `, `keyFn` give the connection key to identify a connection. `request.httpRequest` is the http request at websocket handshake.so we can use `request.httpRequest.headers` to get http headers.
+ - **messageKeyFn(message,headers)**  - give the connection key from message to determine which connection we will send the message. the `headers` is come from `client.send(message,headers)`.
 
-client messages:
-- **message** - we get a new message;
-- **status** - when server accept a new connection ,we will receive `{status:1,key:"connection key"}`.when connection disconnect ,we will receive `{status:0 , key:"connection key"}`
+Client
+======
+
+Constructor
+-----------
+
+###Client(mqConf)
+`var Client  = require('message-engin').Client`
+Create a message engin client. `mqConf` ref:[node-amqp](https://github.com/postwait/node-amqp)
+
+Methods
+-------
+### function* init()
+We must `yield client.init()` to init client;
+
+Messages
+--------
+### message
+we get a new message , `client.on('message' , function(message,headers){})`. the `header` is come from a websocket http request at handsake.
+###status
+connnection status change,such as a new connection established or a connection disconneted.
+`client.on('message' , function(message,headers){})`.the `header` is come from a websocket http request at handsake.When server accept a new connection ,we will receive `{status:1,key:"connection key"}`.when connection disconnect ,we will receive `{status:0 , key:"connection key"}`
 
 
 
