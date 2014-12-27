@@ -41,6 +41,7 @@ MqManager.prototype.init = function*(){
 	this.messageQueue.subscribe(function (message, headers, deliveryInfo) {
 		_this.fireMessage(message,headers);
 	});
+	console.log('init mq over')
 };
 
 MqManager.prototype.fireMessage = function(message,headers){
@@ -113,8 +114,10 @@ WsManager.prototype._onRequest = function(request){
 		}catch(e){
 			return request.reject(e.status||404, e.reason);
 		}
-		if(this.connections[key]){
-			this.connections[key].close();
+		if(this.connections[key] && -1 == this.connections[key].closeReasonCode){
+			this.connections[key].old=true;
+			this.connections[key].drop();
+			this.onConnectionStatusChangeCb({status:0,key:key , reasonCode:1002,description:"OldConnection"},this.connections[key].request.httpRequest.headers);
 		}
 		var connection = request.accept(this.conf.protocol,this.conf.origin||request.origin );
 		connection.request = request;
@@ -140,13 +143,17 @@ WsManager.prototype._onRequest = function(request){
 			// });
 		});
 		connection.on('close', function(reasonCode, description) {
+			if(this.old) {
+				return;
+			}
 	        if(_this.onConnectionStatusChangeCb){
-	        	_this.onConnectionStatusChangeCb({status:0,key:connection.__key__ , reasonCode:reasonCode,description:description},connection.request.httpRequest.headers);
+	        	_this.onConnectionStatusChangeCb({status:0,key:this.__key__ , reasonCode:reasonCode,description:description},this.request.httpRequest.headers);
 	        }
-	        if(1000 != reasonCode){
-	        	delete _this.connections[this.__key__];
-	        }
-	        this.connectionCount -=1;
+	        delete _this.connections[this.__key__];
+	        // if(1000 != reasonCode){
+	        // 	
+	        // }
+	        _this.connectionCount -=1;
 	    });
 	}).call(this);
 };
