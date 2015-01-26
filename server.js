@@ -117,7 +117,7 @@ WsManager.prototype._onRequest = function(request){
 		if(this.connections[key] && -1 == this.connections[key].closeReasonCode){
 			this.connections[key].old=true;
 			this.connections[key].drop();
-			this.onConnectionStatusChangeCb({status:0,key:key , reasonCode:1002,description:"OldConnection"},this.connections[key].request.httpRequest.headers);
+		//	this.onConnectionStatusChangeCb({status:0,key:key , reasonCode:1002,description:"OldConnection"},this.connections[key].request.httpRequest.headers);
 		}
 		var connection = request.accept(this.conf.protocol,this.conf.origin||request.origin );
 		connection.request = request;
