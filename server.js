@@ -34,7 +34,7 @@ MqManager.prototype.init = function*(){
 	this.receiveExchange = yield amqpUtils.createExchange(this.client , this.conf.receiveExchange, {type:'direct'});
 	this.statusExchange = yield amqpUtils.createExchange(this.client , this.conf.statusExchange ,{type:'direct'});
 	var messageExchange = yield amqpUtils.createExchange(this.client , this.conf.messageExchange ,{type:'fanout'});
-	this.messageQueue = yield amqpUtils.createQueue(this.client ,this.conf.messageQueue);
+	this.messageQueue = yield amqpUtils.createQueue(this.client ,this.conf.messageQueue+"-"+Math.random());
 	yield amqpUtils.queueBind(this.messageQueue ,messageExchange, this.conf.messageQueue);
 	// this.messageQueue.bind(this.conf.messageExchange, this.conf.messageQueue);
 	var _this = this;
